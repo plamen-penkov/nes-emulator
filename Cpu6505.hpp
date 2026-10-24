@@ -82,17 +82,19 @@ private:
     uint8_t ADC(); // Add with carry
     uint8_t SBC(); // Subtract with carry
     uint8_t INC(); // Increment memory location by 1
-    uint8_t DEC(); 
+    uint8_t DEC(); // Decrement memory location by 1
     uint8_t INX(); // Increment X by 1
-    uint8_t DEX();
+    uint8_t DEX(); // Decrement X by 1
     uint8_t INY(); // Increment Y by 1
-    uint8_t DEY();
+    uint8_t DEY(); // Decrement Y by 1
     // ===== Jump Operations =====
-    uint8_t JMP();
+    uint8_t JMP(); // Jump the program counter to a location from memory
     uint8_t JSR();
     uint8_t RTS();
     uint8_t BRK();
     uint8_t RTI();
+    // ===== Stack Operations =====
+    uint8_t PHA(); // Push value of the Accumulator to the stack position
     // ===== Other =====
-    uint8_t NOP();
+    uint8_t NOP(); // Self explanatory
 };

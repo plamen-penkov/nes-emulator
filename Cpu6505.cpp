@@ -436,3 +436,15 @@ uint8_t Cpu6505::DEY() {
 
     return 1;
 }
+
+// ===== JUMP =====
+uint8_t Cpu6505::JMP() {
+    programCounter = read(addr_abs);
+    return 1;
+}
+
+// ===== STACK =====
+uint8_t Cpu6505::PHA() {
+    write((0x0100 + stackPointer), accumulator);
+    stackPointer--;
+}

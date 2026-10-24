@@ -35,6 +35,7 @@ public:
     std::vector<Instruction> lookup;    
 
     uint16_t addr_abs = 0x0000;
+    uint16_t addr_rel = 0x0000;
 
     void connectBus(Bus* n);
 
@@ -53,8 +54,45 @@ private:
     // Addressing Modes (These return an extra cycle penalty if applicable)
     uint8_t IMP(); // Implied
     uint8_t IMM(); // Immediate
+    uint8_t ZP0(); // Zero Page (An 8-bit address on page 0)
+    uint8_t ZPX(); // Zero Page with X offset
+    uint8_t ZPY(); // Zero Page with Y offset
+    uint8_t REL(); // Relative (Used only for branch instructions, calculates an offset from the Program Counter)
+    uint8_t ABS(); // Absolute (A full 16-bit address anywhere in memory)
+    uint8_t ABX(); // Absolute with X offset
+    uint8_t ABY(); // Absolute with Y offset
+    uint8_t IND(); // Indirect (Reads a 16-bit pointer from an Absolute address; used exclusively by the JMP instruction)
+    uint8_t IZX(); // Indexed indirect (Reads a 16-bit pointer from a Zero Page address offset by X)
+    uint8_t IZY(); // Indexed indirect (Reads a 16-bit pointer from a Zero Page address offset by Y)
 
-    // Opcodes (These return an extra cycle penalty if applicable)
-    uint8_t NOP(); // No Operation
-    uint8_t LDA(); // Load Accumulator
+    // ===== Opcodes (These return an extra cycle penalty if applicable) =====
+    // ===== Access Operations =====
+    uint8_t STA(); // Store A into memory
+    uint8_t STX(); // Store X into memory
+    uint8_t STY(); // Story Y into memory
+    uint8_t LDA(); // Load Accumulator from memory
+    uint8_t LDX(); // Load X from memory
+    uint8_t LDY(); // Load Y from memory
+    // ===== Bitwise Operations=====
+    uint8_t AND(); // AND Accumulator with memory
+    uint8_t ORA(); // OR accumulator with memory
+    uint8_t EOR(); // XOR accumulator with memory
+    uint8_t BIT(); // BIT test
+    // ===== Arithmetic Operations =====
+    uint8_t ADC(); // Add with carry
+    uint8_t SBC(); // Subtract with carry
+    uint8_t INC(); // Increment memory location by 1
+    uint8_t DEC(); 
+    uint8_t INX(); // Increment X by 1
+    uint8_t DEX();
+    uint8_t INY(); // Increment Y by 1
+    uint8_t DEY();
+    // ===== Jump Operations =====
+    uint8_t JMP();
+    uint8_t JSR();
+    uint8_t RTS();
+    uint8_t BRK();
+    uint8_t RTI();
+    // ===== Other =====
+    uint8_t NOP();
 };

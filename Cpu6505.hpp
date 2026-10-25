@@ -78,7 +78,7 @@ private:
     uint8_t LDX(); // Load X from memory
     uint8_t LDY(); // Load Y from memory
     // ===== Transfer Operations =====
-    uint8_t TAX();
+    uint8_t TAX(); // Transfer A to X
     uint8_t TXA();
     uint8_t TAY();
     uint8_t TYA();

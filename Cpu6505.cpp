@@ -312,6 +312,41 @@ uint8_t Cpu6505::LDY() {
 }
 
 // ===== TRANSFER =====
+uint8_t Cpu6505::TAX() {
+    x = accumulator;
+    
+    SetFlag(Z, x == 0x00);
+    SetFlag(N, (x &0x80) != 0);
+
+    return 0;
+}
+
+uint8_t Cpu6505::TXA() {
+    accumulator = x;
+    
+    SetFlag(Z, accumulator == 0x00);
+    SetFlag(N, (accumulator & 0x80) != 0);
+
+    return 0;
+}
+
+uint8_t Cpu6505::TAY() {
+    y = accumulator;
+    
+    SetFlag(Z, y == 0x00);
+    SetFlag(N, (y &0x80) != 0);
+
+    return 0;
+}
+
+uint8_t Cpu6505::TYA() {
+    accumulator = y;
+    
+    SetFlag(Z, accumulator == 0x00);
+    SetFlag(N, (accumulator & 0x80) != 0);
+
+    return 0;
+}
 
 // ===== ARITHMETIC =====
 uint8_t Cpu6505::ADC() {

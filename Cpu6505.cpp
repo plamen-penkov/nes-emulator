@@ -384,7 +384,7 @@ uint8_t Cpu6505::INC() {
     SetFlag(Z, fetchedData == 0x00);
     SetFlag(N, fetchedData & 0x80);
 
-    return 1;
+    return 0;
 }
 
 uint8_t Cpu6505::DEC() {
@@ -395,7 +395,7 @@ uint8_t Cpu6505::DEC() {
     SetFlag(Z, fetchedData == 0x00);
     SetFlag(N, fetchedData & 0x80);
 
-    return 1;
+    return 0;
 }
 
 uint8_t Cpu6505::INX() {
@@ -404,7 +404,7 @@ uint8_t Cpu6505::INX() {
     SetFlag(Z, x == 0x00);
     SetFlag(N, x & 0x80);
 
-    return 1;
+    return 0;
 }
 
 uint8_t Cpu6505::DEX() {
@@ -413,7 +413,7 @@ uint8_t Cpu6505::DEX() {
     SetFlag(Z, x == 0x00);
     SetFlag(N, x & 0x80);
 
-    return 1;
+    return 0;
 }
 
 uint8_t Cpu6505::INY() {
@@ -422,7 +422,7 @@ uint8_t Cpu6505::INY() {
     SetFlag(Z, y == 0x00);
     SetFlag(N, y & 0x80);
 
-    return 1;
+    return 0;
 }
 
 uint8_t Cpu6505::DEY() {
@@ -431,10 +431,62 @@ uint8_t Cpu6505::DEY() {
     SetFlag(Z, y == 0x00);
     SetFlag(N, y & 0x80);
 
-    return 1;
+    return 0;
 }
 
 // ===== SHIFT =====
+uint8_t Cpu6505::ASL() {
+    uint8_t fetchedData = read(addr_abs);
+
+    uint16_t temp = (uint16_t)fetchedData << 1;
+
+    SetFlag(C, (temp & 0xFF00) != 0);
+    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(N, (temp & 0x80) != 0);
+
+    write(addr_abs, temp & 0x00FF);
+    return 0;
+}
+
+uint8_t Cpu6505::LSR() {
+    uint8_t fetchedData = read(addr_abs);
+
+    SetFlag(C, (fetchedData & 0x0001) != 0);
+
+    uint8_t temp = fetchedData >> 1;
+
+    SetFlag(Z, temp == 0x00);
+    SetFlag(N, (temp & 0x80) != 0);
+
+    write(addr_abs, temp);
+    return 0;
+}
+
+uint8_t Cpu6505::ROL() {
+    uint8_t fetchedData = read(addr_abs);
+
+    uint16_t temp = ((uint16_t)fetchedData << 1) | GetFlag(C);
+
+    SetFlag(C, (temp & 0xFF00) != 0);
+    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(N, (temp & 0x80) != 0);
+
+    write(addr_abs, temp & 0x00FF);
+    return 0;
+}
+
+uint8_t Cpu6505::ROR() {
+    uint8_t fetchedData = read(addr_abs);
+
+    uint8_t temp = (fetchedData << 1) | (GetFlag(C) << 7);
+
+    SetFlag(C, (temp & 0x0001) != 0);
+    SetFlag(Z, temp == 0x00);
+    SetFlag(N, (temp & 0x80) != 0);
+
+    write(addr_abs, temp);
+    return 0;
+}
 
 // ===== BITWISE =====
 uint8_t Cpu6505::AND() {

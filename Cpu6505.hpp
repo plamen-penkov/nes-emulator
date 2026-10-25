@@ -79,9 +79,9 @@ private:
     uint8_t LDY(); // Load Y from memory
     // ===== Transfer Operations =====
     uint8_t TAX(); // Transfer A to X
-    uint8_t TXA();
-    uint8_t TAY();
-    uint8_t TYA();
+    uint8_t TXA(); // Transfer X to A
+    uint8_t TAY(); // Transfer A to Y
+    uint8_t TYA(); // Transfer Y to A
     // ===== Arithmetic Operations =====
     uint8_t ADC(); // Add with carry
     uint8_t SBC(); // Subtract with carry
@@ -92,10 +92,10 @@ private:
     uint8_t INY(); // Increment Y by 1
     uint8_t DEY(); // Decrement Y by 1
     // ===== Shift Operations =====
-    uint8_t ASL();
-    uint8_t LSR();
-    uint8_t ROL();
-    uint8_t ROR();
+    uint8_t ASL(); // Arithmetic Shift Left
+    uint8_t LSR(); // Logical Shift Right
+    uint8_t ROL(); // Rotate Left
+    uint8_t ROR(); // Rotate Right
     // ===== Bitwise Operations =====
     uint8_t AND(); // AND Accumulator with memory
     uint8_t ORA(); // OR accumulator with memory

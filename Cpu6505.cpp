@@ -208,7 +208,7 @@ uint8_t Cpu6505::IND() {
 }
 
 // Indexed Indirect with X offset
-uint8_t Cpu6505::IZY() {
+uint8_t Cpu6505::IZX() {
     uint16_t t = read(programCounter);
     programCounter++;
 

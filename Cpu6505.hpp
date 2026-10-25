@@ -50,8 +50,10 @@ private:
 
     void SetFlag(FLAGS6502 f, bool v);
     uint8_t GetFlag(FLAGS6502 f);
-
+    
+    // ==============================================
     // Addressing Modes (These return an extra cycle penalty if applicable)
+    // ==============================================
     uint8_t IMP(); // Implied
     uint8_t IMM(); // Immediate
     uint8_t ZP0(); // Zero Page (An 8-bit address on page 0)
@@ -65,7 +67,9 @@ private:
     uint8_t IZX(); // Indexed indirect (Reads a 16-bit pointer from a Zero Page address offset by X)
     uint8_t IZY(); // Indexed indirect (Reads a 16-bit pointer from a Zero Page address offset by Y)
 
-    // ===== Opcodes (These return an extra cycle penalty if applicable) =====
+    // ==============================================
+    // Opcodes (These return an extra cycle penalty if applicable)
+    // ==============================================
     // ===== Access Operations =====
     uint8_t STA(); // Store A into memory
     uint8_t STX(); // Store X into memory
@@ -73,11 +77,11 @@ private:
     uint8_t LDA(); // Load Accumulator from memory
     uint8_t LDX(); // Load X from memory
     uint8_t LDY(); // Load Y from memory
-    // ===== Bitwise Operations=====
-    uint8_t AND(); // AND Accumulator with memory
-    uint8_t ORA(); // OR accumulator with memory
-    uint8_t EOR(); // XOR accumulator with memory
-    uint8_t BIT(); // BIT test
+    // ===== Transfer Operations =====
+    uint8_t TAX();
+    uint8_t TXA();
+    uint8_t TAY();
+    uint8_t TYA();
     // ===== Arithmetic Operations =====
     uint8_t ADC(); // Add with carry
     uint8_t SBC(); // Subtract with carry
@@ -87,14 +91,50 @@ private:
     uint8_t DEX(); // Decrement X by 1
     uint8_t INY(); // Increment Y by 1
     uint8_t DEY(); // Decrement Y by 1
+    // ===== Shift Operations =====
+    uint8_t ASL();
+    uint8_t LSR();
+    uint8_t ROL();
+    uint8_t ROR();
+    // ===== Bitwise Operations =====
+    uint8_t AND(); // AND Accumulator with memory
+    uint8_t ORA(); // OR accumulator with memory
+    uint8_t EOR(); // XOR accumulator with memory
+    uint8_t BIT(); // BIT test
+    // ===== Compare Operations =====
+    uint8_t CMP(); // Compare A to memory
+    uint8_t CPX(); // Compare X to memory
+    uint8_t CPY(); // Compare Y to memory
+    // ===== Branch Operations =====
+    uint8_t BCC();
+    uint8_t BCS();
+    uint8_t BEQ();
+    uint8_t BNE();
+    uint8_t BPL();
+    uint8_t BMI();
+    uint8_t BVC();
+    uint8_t BVS();
     // ===== Jump Operations =====
     uint8_t JMP(); // Jump the program counter to a location from memory
-    uint8_t JSR();
-    uint8_t RTS();
-    uint8_t BRK();
-    uint8_t RTI();
+    uint8_t JSR(); // Jump to Subroutine pushes the current program counter to the stack and then sets the program counter to a new value
+    uint8_t RTS(); // Return from Subroutine pulls an address from the stack into the program counter and then increments the program counter
+    uint8_t BRK(); // Break triggers an interrupt request (IRQ)
+    uint8_t RTI(); // Return from Interrupt
     // ===== Stack Operations =====
     uint8_t PHA(); // Push value of the Accumulator to the stack position
+    uint8_t PLA(); // Pull A
+    uint8_t PHP(); // Push Processor Status
+    uint8_t PLP(); // Pull Processor Status
+    uint8_t TXS(); // Transfer X to Stack Pointer
+    uint8_t TSX(); // Transfer Stack Pointer to X
+    // ===== Flags Operations =====
+    uint8_t CLC();
+    uint8_t SEC();
+    uint8_t CLI();
+    uint8_t SEI();
+    uint8_t CLD();
+    uint8_t SED();
+    uint8_t CLV();
     // ===== Other =====
     uint8_t NOP(); // Self explanatory
 };

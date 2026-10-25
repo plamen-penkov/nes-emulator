@@ -72,7 +72,9 @@ uint8_t Cpu6505::GetFlag(FLAGS6502 f) {
     return ((status & f) > 0) ? 1 : 0;
 }
 
-// --- ADDRESSING MODES ---
+// ==============================================
+// ADDRESSING MODES
+// ==============================================
 
 // Implicid: The instruction doesn't need an address (e.g., NOP)
 uint8_t Cpu6505::IMP() {
@@ -247,12 +249,9 @@ uint8_t Cpu6505::IZY() {
     return 0;
 }
 
-// ===== OPCODES =====
-
-// NOP: No operation
-uint8_t Cpu6505::NOP() {
-    return 0;
-}
+// ==============================================
+// OPCODES 
+// ==============================================
 
 // ===== ACCESS =====
 uint8_t Cpu6505::STA() {
@@ -312,44 +311,7 @@ uint8_t Cpu6505::LDY() {
     return 1; // LDA can potentially require an extra clock depending on the address mode
 }
 
-// ===== BITWISE =====
-uint8_t Cpu6505::AND() {
-    uint8_t fetchedData = read(addr_abs);
-    accumulator = accumulator & fetchedData;
-
-    SetFlag(Z, y == 0x00);
-    SetFlag(N, (y & 0x80) != 0);
-    return 1;
-}
-
-uint8_t Cpu6505::ORA() {
-    uint8_t fetchedData = read(addr_abs);
-    accumulator = accumulator | fetchedData;
-
-    SetFlag(Z, y == 0x00);
-    SetFlag(N, (y & 0x80) != 0);
-    return 1;
-}
-
-uint8_t Cpu6505::EOR() {
-    uint8_t fetchedData = read(addr_abs);
-    accumulator = accumulator ^ fetchedData;
-
-    SetFlag(Z, y == 0x00);
-    SetFlag(N, (y & 0x80) != 0);
-    return 1;
-}
-
-uint8_t Cpu6505::BIT() {
-    uint8_t fetchedData = read(addr_abs);
-    uint8_t temp = accumulator & fetchedData;
-    
-    SetFlag(Z, temp == 0x00);
-    SetFlag(N, (fetchedData & (1 << 7)) != 0);
-    SetFlag(V, (fetchedData & (1 << 6)) != 0);
-    
-    return 0; // BIT never triggers an extra cycle penalty
-}
+// ===== TRANSFER =====
 
 // ===== ARITHMETIC =====
 uint8_t Cpu6505::ADC() {
@@ -437,14 +399,219 @@ uint8_t Cpu6505::DEY() {
     return 1;
 }
 
+// ===== SHIFT =====
+
+// ===== BITWISE =====
+uint8_t Cpu6505::AND() {
+    uint8_t fetchedData = read(addr_abs);
+    accumulator = accumulator & fetchedData;
+
+    SetFlag(Z, y == 0x00);
+    SetFlag(N, (y & 0x80) != 0);
+    return 1;
+}
+
+uint8_t Cpu6505::ORA() {
+    uint8_t fetchedData = read(addr_abs);
+    accumulator = accumulator | fetchedData;
+
+    SetFlag(Z, y == 0x00);
+    SetFlag(N, (y & 0x80) != 0);
+    return 1;
+}
+
+uint8_t Cpu6505::EOR() {
+    uint8_t fetchedData = read(addr_abs);
+    accumulator = accumulator ^ fetchedData;
+
+    SetFlag(Z, y == 0x00);
+    SetFlag(N, (y & 0x80) != 0);
+    return 1;
+}
+
+uint8_t Cpu6505::BIT() {
+    uint8_t fetchedData = read(addr_abs);
+    uint8_t temp = accumulator & fetchedData;
+    
+    SetFlag(Z, temp == 0x00);
+    SetFlag(N, (fetchedData & (1 << 7)) != 0);
+    SetFlag(V, (fetchedData & (1 << 6)) != 0);
+    
+    return 0; // BIT never triggers an extra cycle penalty
+}
+
+// ===== COMPARE =====
+uint8_t Cpu6505::CMP() {
+    uint8_t fetchedData = read(addr_abs);
+    uint8_t result = accumulator - fetchedData;
+
+    SetFlag(C, accumulator >= fetchedData);
+    SetFlag(Z, result == 0x00);
+    SetFlag(N, (result & 0x80) != 0);
+
+    return 1;
+}
+
+uint8_t Cpu6505::CPX() {
+    uint8_t fetchedData = read(addr_abs);
+    uint8_t result = x - fetchedData;
+
+    SetFlag(C, x >= fetchedData);
+    SetFlag(Z, result == 0x00);
+    SetFlag(N, (result & 0x80) != 0);
+
+    return 1;
+}
+
+uint8_t Cpu6505::CPY() {
+    uint8_t fetchedData = read(addr_abs);
+    uint8_t result = y - fetchedData;
+
+    SetFlag(C, y >= fetchedData);
+    SetFlag(Z, result == 0x00);
+    SetFlag(N, (result & 0x80) != 0);
+
+    return 1;
+}
+
+// ===== BRANCH =====
+
 // ===== JUMP =====
 uint8_t Cpu6505::JMP() {
     programCounter = read(addr_abs);
     return 1;
 }
 
+uint8_t Cpu6505::JSR() {
+    // Calculate the return address (next instruction address - 1)
+    uint16_t return_addr = programCounter - 1;
+    
+    // Push the High Byte to the stack first (6502 pushes high then low for 16-bit addresses)
+    write(0x0100 + stackPointer, (return_addr << 8) & 0x00FF);
+    stackPointer--;
+
+    // Push the Low Byte to the stack
+    write(0x0100 + stackPointer, return_addr & 0x00FF);
+    stackPointer--;
+
+    // Set the Program Counter to the target subroutine address calculated by ABS()
+    programCounter = addr_abs;
+
+    return 0;
+}
+
+uint8_t Cpu6505::RTS() {
+    stackPointer++;
+    uint8_t lo = read(0x0100 + stackPointer);
+    stackPointer++;
+    uint8_t hi = read(0x0100 + stackPointer);
+
+    uint16_t return_addr = (hi << 8) | lo;
+    programCounter = return_addr + 1;
+
+    return 0;
+}
+
+uint8_t Cpu6505::BRK() {
+    // Advance the Program Counter 
+    // (BRK leaves a 1-byte gap before pushing the return address)
+    programCounter++;
+
+    // Push Program Counter to the stack (High byte first)
+    write(0x0100 + stackPointer, (programCounter << 8) & 0x00FF);
+    stackPointer--;
+    write(0x0100 + stackPointer, programCounter & 0x00FF);
+    stackPointer--;
+
+    // Push Status Register to the stack with Break (Bit 4) and Unused (Bit 5) set to 1
+    // (Assuming your status register is a uint8_t named 'status')
+    write(0x0100 + stackPointer, status | (1 << 4) | (1 << 5));
+    stackPointer--;
+
+    // Set the Interupt Disable (I) flag
+    SetFlag(I, true);
+
+    // Read the IRQ/BRK vector from 0xFFFE and 0xFFFF to find the new Program Counter
+    uint16_t lo = read(0xFFFE);
+    uint16_t hi = read(0xFFFF);
+    programCounter = (hi << 8) | lo;
+
+    return 0; // BRK cycle count is fixed
+}
+
+uint8_t Cpu6505::RTI() {
+    stackPointer++;
+    status = read(0x0100 + stackPointer);
+
+    // The physical 6502 ignores bits 4 (Break) and forces bit 5 (Unused) to 1 
+    // when restoring the status register from the stack.
+    status &= ~(1 << 4); 
+    status |= (1 << 5);
+    
+    stackPointer++;
+    uint8_t lo = read(0x0100 + stackPointer);
+    stackPointer++;
+    uint8_t hi = read(0x0100 + stackPointer);
+
+    programCounter = (hi << 8) | lo;;
+    
+    return 0;
+}
+
 // ===== STACK =====
 uint8_t Cpu6505::PHA() {
     write((0x0100 + stackPointer), accumulator);
     stackPointer--;
+    
+    return 1;
+}
+
+uint8_t Cpu6505::PLA() {
+    stackPointer++;
+    accumulator = read(0x0100 + stackPointer);
+    
+    SetFlag(Z, accumulator == 0x00);
+    SetFlag(N, (accumulator & 0x80) != 0);
+    
+    return 1;
+}
+
+uint8_t Cpu6505::PHP() {
+    // Push status with Break and Unused bits set to 1
+    write(0x0100 + stackPointer, status | (1 << 4) | (1 << 5));
+    stackPointer--;
+
+    return 1;
+}
+
+uint8_t Cpu6505::PLP() {
+    stackPointer++;
+    status = read(0x0100 + stackPointer);
+
+    status &= ~(1 << 4); 
+    status |= (1 << 5);
+
+    return 1;
+}
+
+uint8_t Cpu6505::TXS() {
+    stackPointer = x;
+    return 1;
+}
+
+uint8_t Cpu6505::TSX() {
+    x = stackPointer;
+
+    SetFlag(Z, x == 0x00);
+    SetFlag(N, (x & 0x80) != 0);
+
+    return 1;
+}
+
+// ===== FLAGS =====
+
+// ===== OTHER =====
+
+uint8_t Cpu6505::NOP() {
+    return 0;
 }

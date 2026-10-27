@@ -51,6 +51,8 @@ private:
     void SetFlag(FLAGS6502 f, bool v);
     uint8_t GetFlag(FLAGS6502 f);
     
+    bool isAccumulatorMode = false; 
+
     // ==============================================
     // Addressing Modes (These return an extra cycle penalty if applicable)
     // ==============================================
@@ -106,14 +108,14 @@ private:
     uint8_t CPX(); // Compare X to memory
     uint8_t CPY(); // Compare Y to memory
     // ===== Branch Operations =====
-    uint8_t BCC();
-    uint8_t BCS();
-    uint8_t BEQ();
-    uint8_t BNE();
-    uint8_t BPL();
-    uint8_t BMI();
-    uint8_t BVC();
-    uint8_t BVS();
+    uint8_t BCC(); // Branch if Carry Clear
+    uint8_t BCS(); // Branch if Carry Set
+    uint8_t BEQ(); // Branch if Equal
+    uint8_t BNE(); // Branch if Not Equal
+    uint8_t BPL(); // Branch if Plus
+    uint8_t BMI(); // Branch if Minus
+    uint8_t BVC(); // Branch if Overflow Clear
+    uint8_t BVS(); // Branch if Overflow Set
     // ===== Jump Operations =====
     uint8_t JMP(); // Jump the program counter to a location from memory
     uint8_t JSR(); // Jump to Subroutine pushes the current program counter to the stack and then sets the program counter to a new value
@@ -128,13 +130,19 @@ private:
     uint8_t TXS(); // Transfer X to Stack Pointer
     uint8_t TSX(); // Transfer Stack Pointer to X
     // ===== Flags Operations =====
-    uint8_t CLC();
-    uint8_t SEC();
-    uint8_t CLI();
-    uint8_t SEI();
-    uint8_t CLD();
-    uint8_t SED();
-    uint8_t CLV();
+    uint8_t CLC(); // Clear Carry
+    uint8_t SEC(); // Set Carry
+    uint8_t CLI(); // Clear Interrupt Disable
+    uint8_t SEI(); // Set Interrupt Disable
+    uint8_t CLD(); // Clear Decimal
+    uint8_t SED(); // Set Decimal
+    uint8_t CLV(); // Clear Overflow
     // ===== Other =====
     uint8_t NOP(); // Self explanatory
+    uint8_t SLO(); // Shift Left then OR
+    uint8_t RLA(); // Rotate Left then AND
+    uint8_t SRE(); // Shift Right and XOR
+    uint8_t ALR(); // AND then Shift Right
+    uint8_t ANC(); // AND with Carry
+    uint8_t XXX(); // Illegal
 };

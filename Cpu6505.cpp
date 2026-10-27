@@ -6,10 +6,118 @@ Cpu6505::Cpu6505() {
     // Fill the table with 256 blank instructions first to prevent crashes
     lookup = std::vector<Instruction>(256, {"XXX", &Cpu6505::NOP, &Cpu6505::IMP, 2});
 
-    // Overwrite index 0xA9 (169) with LDA Immediate Instruction
-    lookup[0xA9] = {"LDA", &Cpu6505::LDA, &Cpu6505::IMM, 2};
+    // Document with the lookup table
+    // https://www.reddit.com/r/beneater/comments/ujtza8/hi_today_i_finished_writing_this_document_which/#lightbox
+    lookup = {
+        // 0x00 - 0x0F
+        {"BRK", &Cpu6505::BRK, &Cpu6505::IMP, 7},
+        {"ORA", &Cpu6505::ORA, &Cpu6505::ZPX, 6},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMP, 2},
+        {"SLO", &Cpu6505::SLO, &Cpu6505::ZPX, 8},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ZP0, 3},
+        {"ORA", &Cpu6505::ORA, &Cpu6505::ZP0, 3},
+        {"ASL", &Cpu6505::ASL, &Cpu6505::ZP0, 5},
+        {"SLO", &Cpu6505::SLO, &Cpu6505::ZP0, 5},
+        {"PHP", &Cpu6505::PHP, &Cpu6505::IMP, 3},
+        {"ORA", &Cpu6505::ORA, &Cpu6505::IMM, 2},
+        {"ASL", &Cpu6505::ASL, &Cpu6505::IMP, 2},
+        {"ANC", &Cpu6505::ANC, &Cpu6505::IMM, 2},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ABS, 4},
+        {"ORA", &Cpu6505::ORA, &Cpu6505::ABS, 4},
+        {"ASL", &Cpu6505::ASL, &Cpu6505::ABS, 6},
+        {"SLO", &Cpu6505::SLO, &Cpu6505::ABS, 6},
+        
+        // 0x10 - 0x1F
+        {"BPL", &Cpu6505::BPL, &Cpu6505::REL, 2},
+        {"ORA", &Cpu6505::ORA, &Cpu6505::ZPY, 5},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMM, 2},
+        {"SLO", &Cpu6505::SLO, &Cpu6505::ZPY, 8},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ZPX, 4},
+        {"ORA", &Cpu6505::ORA, &Cpu6505::ZPX, 4},
+        {"ASL", &Cpu6505::ASL, &Cpu6505::ZPX, 6},
+        {"SLO", &Cpu6505::SLO, &Cpu6505::ZPX, 6},
+        {"CLC", &Cpu6505::CLC, &Cpu6505::IMP, 2},
+        {"ORA", &Cpu6505::ORA, &Cpu6505::ABY, 4},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMP, 2},
+        {"SLO", &Cpu6505::SLO, &Cpu6505::ABY, 7},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ABX, 4},
+        {"ORA", &Cpu6505::ORA, &Cpu6505::ABX, 4},
+        {"ASL", &Cpu6505::ASL, &Cpu6505::ABX, 7},
+        {"SLO", &Cpu6505::SLO, &Cpu6505::ABX, 7},
 
-    // TODO: Add overwrite for all opcodes
+        // 0x20 - 0x2F
+        {"JSR", &Cpu6505::JSR, &Cpu6505::ABS, 6},
+        {"AND", &Cpu6505::AND, &Cpu6505::ZPX, 6},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMM, 2},
+        {"RLA", &Cpu6505::RLA, &Cpu6505::ZPX, 8},
+        {"BIT", &Cpu6505::BIT, &Cpu6505::ZP0, 3},
+        {"AND", &Cpu6505::AND, &Cpu6505::ZP0, 3},
+        {"ROL", &Cpu6505::ROL, &Cpu6505::ZP0, 5},
+        {"RLA", &Cpu6505::RLA, &Cpu6505::ZP0, 5},
+        {"PLP", &Cpu6505::PLP, &Cpu6505::IMP, 4},
+        {"AND", &Cpu6505::AND, &Cpu6505::IMM, 2},
+        {"ROL", &Cpu6505::ROL, &Cpu6505::IMP, 2},
+        {"ANC", &Cpu6505::ANC, &Cpu6505::IMM, 2},
+        {"BIT", &Cpu6505::BIT, &Cpu6505::ABS, 4},
+        {"AND", &Cpu6505::AND, &Cpu6505::ABS, 4},
+        {"ROL", &Cpu6505::ROL, &Cpu6505::ABS, 6},
+        {"RLA", &Cpu6505::RLA, &Cpu6505::ABS, 6},
+
+        // 0x30 - 0x3F
+        {"BMI", &Cpu6505::BMI, &Cpu6505::REL, 2},
+        {"AND", &Cpu6505::AND, &Cpu6505::ZPY, 5},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMM, 2},
+        {"RLA", &Cpu6505::RLA, &Cpu6505::ZPY, 8},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ZPX, 4},
+        {"AND", &Cpu6505::AND, &Cpu6505::ZPX, 4},
+        {"ROL", &Cpu6505::ROL, &Cpu6505::ZPX, 6},
+        {"RLA", &Cpu6505::RLA, &Cpu6505::ZPX, 6},
+        {"SEC", &Cpu6505::SEC, &Cpu6505::IMP, 2},
+        {"AND", &Cpu6505::AND, &Cpu6505::ABX, 4},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMP, 2},
+        {"RLA", &Cpu6505::RLA, &Cpu6505::ABY, 7},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ABX, 4},
+        {"AND", &Cpu6505::AND, &Cpu6505::ABX, 4},
+        {"ROL", &Cpu6505::ROL, &Cpu6505::ABX, 7},
+        {"RLA", &Cpu6505::RLA, &Cpu6505::ABX, 7},
+        
+        // 0x40 - 0x4F
+        {"RTI", &Cpu6505::RTI, &Cpu6505::IMP, 6},
+        {"EOR", &Cpu6505::EOR, &Cpu6505::ZPX, 6},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMM, 2},
+        {"SRE", &Cpu6505::SRE, &Cpu6505::ZPX, 8},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ZP0, 3},
+        {"EOR", &Cpu6505::EOR, &Cpu6505::ZP0, 3},
+        {"LSR", &Cpu6505::LSR, &Cpu6505::ZP0, 5},
+        {"SRE", &Cpu6505::SRE, &Cpu6505::ZP0, 5},
+        {"PHA", &Cpu6505::PHA, &Cpu6505::IMP, 3},
+        {"EOR", &Cpu6505::EOR, &Cpu6505::IMM, 2},
+        {"LSR", &Cpu6505::LSR, &Cpu6505::IMP, 2},
+        {"ALR", &Cpu6505::ALR, &Cpu6505::IMM, 2}
+
+        // 0x50 - 0x5F
+
+        // 0x60 - 0x6F
+
+        // 0x70 - 0x7F
+
+        // 0x80 - 0x8F
+
+        // 0x90 - 0x9F
+
+        // 0xA0 - 0xAF
+
+        // 0xB0 - 0xBF
+
+        // 0xC0 - 0xCF
+
+        // 0xD0 - 0xDF
+
+        // 0xE0 - 0xEF
+
+        // 0xF0 - 0xFF
+
+    };
 }
 
 Cpu6505::~Cpu6505() {}
@@ -78,6 +186,7 @@ uint8_t Cpu6505::GetFlag(FLAGS6502 f) {
 
 // Implicid: The instruction doesn't need an address (e.g., NOP)
 uint8_t Cpu6505::IMP() {
+    isAccumulatorMode = true;
     return 0;
 }
 
@@ -294,7 +403,7 @@ uint8_t Cpu6505::LDX() {
     SetFlag(Z, x == 0x00);
     SetFlag(N, (x & 0x80) != 0);
 
-    return 1; // LDA can potentially require an extra clock depending on the address mode
+    return 1; // LDX can potentially require an extra clock depending on the address mode
 }
 
 uint8_t Cpu6505::LDY() {
@@ -308,7 +417,7 @@ uint8_t Cpu6505::LDY() {
     SetFlag(Z, y == 0x00);
     SetFlag(N, (y & 0x80) != 0);
 
-    return 1; // LDA can potentially require an extra clock depending on the address mode
+    return 1; // LDY can potentially require an extra clock depending on the address mode
 }
 
 // ===== TRANSFER =====
@@ -443,8 +552,13 @@ uint8_t Cpu6505::ASL() {
     SetFlag(C, (temp & 0xFF00) != 0);
     SetFlag(Z, (temp & 0x00FF) == 0x00);
     SetFlag(N, (temp & 0x80) != 0);
+    
+    if (isAccumulatorMode) {
+        accumulator = temp & 0x00FF;
+    } else {
+        write(addr_abs, temp & 0x00FF);
+    }
 
-    write(addr_abs, temp & 0x00FF);
     return 0;
 }
 
@@ -458,7 +572,12 @@ uint8_t Cpu6505::LSR() {
     SetFlag(Z, temp == 0x00);
     SetFlag(N, (temp & 0x80) != 0);
 
-    write(addr_abs, temp);
+    if (isAccumulatorMode) {
+        accumulator = temp & 0x00FF;
+    } else {
+        write(addr_abs, temp & 0x00FF);
+    }
+
     return 0;
 }
 
@@ -471,7 +590,12 @@ uint8_t Cpu6505::ROL() {
     SetFlag(Z, (temp & 0x00FF) == 0x00);
     SetFlag(N, (temp & 0x80) != 0);
 
-    write(addr_abs, temp & 0x00FF);
+    if (isAccumulatorMode) {
+        accumulator = temp & 0x00FF;
+    } else {
+        write(addr_abs, temp & 0x00FF);
+    }
+    
     return 0;
 }
 
@@ -484,7 +608,12 @@ uint8_t Cpu6505::ROR() {
     SetFlag(Z, temp == 0x00);
     SetFlag(N, (temp & 0x80) != 0);
 
-    write(addr_abs, temp);
+    if (isAccumulatorMode) {
+        accumulator = temp & 0x00FF;
+    } else {
+        write(addr_abs, temp & 0x00FF);
+    }
+
     return 0;
 }
 
@@ -562,11 +691,143 @@ uint8_t Cpu6505::CPY() {
 }
 
 // ===== BRANCH =====
+uint8_t Cpu6505::BCC() {
+    if (GetFlag(C) == 0) {
+        // 1. Branch taken: Add a cycle
+        cycles++;
+
+        // 2. Calculate the target address
+        addr_abs = programCounter + addr_rel;
+
+        // 3. Page crossing check: If the high byte changed, add another cycle
+        if ((addr_abs & 0xFF00) != (programCounter & 0xFF00)) {
+            cycles++;
+        }
+
+        // 4. Actually make the jump
+        programCounter = addr_abs;
+    }
+    
+    // Always return 0 because we handled the extra cycles manually above
+    return 0;
+}
+
+uint8_t Cpu6505::BCS() {
+    if (GetFlag(C) == 1) {
+        cycles++;
+
+        addr_abs = programCounter + addr_rel;
+
+        if ((addr_abs & 0xFF00) != (programCounter & 0xFF00)) {
+            cycles++;
+        }
+
+        programCounter = addr_abs;
+    }
+    
+    return 0;
+}
+
+uint8_t Cpu6505::BEQ() {
+    if (GetFlag(Z) == 1) {
+        cycles++;
+
+        addr_abs = programCounter + addr_rel;
+
+        if ((addr_abs & 0xFF00) != (programCounter & 0xFF00)) {
+            cycles++;
+        }
+
+        programCounter = addr_abs;
+    }
+
+    return 0;
+}
+
+uint8_t Cpu6505::BNE() {
+    if (GetFlag(Z) == 0) {
+        cycles++;
+
+        addr_abs = programCounter + addr_rel;
+
+        if ((addr_abs & 0xFF00) != (programCounter & 0xFF00)) {
+            cycles++;
+        }
+
+        programCounter = addr_abs;
+    }
+
+    return 0;
+}
+
+uint8_t Cpu6505::BPL() {
+    if (GetFlag(N) == 0) {
+        cycles++;
+
+        addr_abs = programCounter + addr_rel;
+
+        if ((addr_abs & 0xFF00) != (programCounter & 0xFF00)) {
+            cycles++;
+        }
+
+        programCounter = addr_abs;
+    }
+
+    return 0;
+}
+
+uint8_t Cpu6505::BMI() {
+    if (GetFlag(N) == 1) {
+        cycles++;
+
+        addr_abs = programCounter + addr_rel;
+
+        if ((addr_abs & 0xFF00) != (programCounter & 0xFF00)) {
+            cycles++;
+        }
+
+        programCounter = addr_abs;
+    }
+
+    return 0;
+}
+
+uint8_t Cpu6505::BVC() {
+    if (GetFlag(V) == 0) {
+        cycles++;
+
+        addr_abs = programCounter + addr_rel;
+
+        if ((addr_abs & 0xFF00) != (programCounter & 0xFF00)) {
+            cycles++;
+        }
+
+        programCounter = addr_abs;
+    }
+
+    return 0;
+}
+
+uint8_t Cpu6505::BVS() {
+    if (GetFlag(V) == 1) {
+        cycles++;
+
+        addr_abs = programCounter + addr_rel;
+
+        if ((addr_abs & 0xFF00) != (programCounter & 0xFF00)) {
+            cycles++;
+        }
+
+        programCounter = addr_abs;
+    }
+
+    return 0;
+}
 
 // ===== JUMP =====
 uint8_t Cpu6505::JMP() {
-    programCounter = read(addr_abs);
-    return 1;
+    programCounter = addr_abs;
+    return 0;
 }
 
 uint8_t Cpu6505::JSR() {
@@ -574,7 +835,7 @@ uint8_t Cpu6505::JSR() {
     uint16_t return_addr = programCounter - 1;
     
     // Push the High Byte to the stack first (6502 pushes high then low for 16-bit addresses)
-    write(0x0100 + stackPointer, (return_addr << 8) & 0x00FF);
+    write(0x0100 + stackPointer, (return_addr >> 8) & 0x00FF);
     stackPointer--;
 
     // Push the Low Byte to the stack
@@ -605,7 +866,7 @@ uint8_t Cpu6505::BRK() {
     programCounter++;
 
     // Push Program Counter to the stack (High byte first)
-    write(0x0100 + stackPointer, (programCounter << 8) & 0x00FF);
+    write(0x0100 + stackPointer, (programCounter >> 8) & 0x00FF);
     stackPointer--;
     write(0x0100 + stackPointer, programCounter & 0x00FF);
     stackPointer--;
@@ -650,7 +911,7 @@ uint8_t Cpu6505::PHA() {
     write((0x0100 + stackPointer), accumulator);
     stackPointer--;
     
-    return 1;
+    return 0;
 }
 
 uint8_t Cpu6505::PLA() {
@@ -660,7 +921,7 @@ uint8_t Cpu6505::PLA() {
     SetFlag(Z, accumulator == 0x00);
     SetFlag(N, (accumulator & 0x80) != 0);
     
-    return 1;
+    return 0;
 }
 
 uint8_t Cpu6505::PHP() {
@@ -668,7 +929,7 @@ uint8_t Cpu6505::PHP() {
     write(0x0100 + stackPointer, status | (1 << 4) | (1 << 5));
     stackPointer--;
 
-    return 1;
+    return 0;
 }
 
 uint8_t Cpu6505::PLP() {
@@ -678,12 +939,12 @@ uint8_t Cpu6505::PLP() {
     status &= ~(1 << 4); 
     status |= (1 << 5);
 
-    return 1;
+    return 0;
 }
 
 uint8_t Cpu6505::TXS() {
     stackPointer = x;
-    return 1;
+    return 0;
 }
 
 uint8_t Cpu6505::TSX() {
@@ -692,13 +953,130 @@ uint8_t Cpu6505::TSX() {
     SetFlag(Z, x == 0x00);
     SetFlag(N, (x & 0x80) != 0);
 
-    return 1;
+    return 0;
 }
 
 // ===== FLAGS =====
+uint8_t Cpu6505::CLC() {
+    SetFlag(C, 0);
+    return 0;
+}
+
+uint8_t Cpu6505::SEC() {
+    SetFlag(C, 1);
+    return 0;
+}
+
+uint8_t Cpu6505::CLI() {
+    SetFlag(I, 0);
+    return 0;
+}
+
+uint8_t Cpu6505::SEI() {
+    SetFlag(I, 1);
+    return 0;
+}
+
+uint8_t Cpu6505::CLD() {
+    SetFlag(D, 0);
+    return 0;
+}
+
+uint8_t Cpu6505::SED() {
+    SetFlag(D, 1);
+    return 0;
+}
+
+uint8_t Cpu6505::CLV() {
+    SetFlag(V, 0);
+    return 0;
+}
 
 // ===== OTHER =====
-
 uint8_t Cpu6505::NOP() {
+    return 0;
+}
+
+uint8_t Cpu6505::SLO() {
+    uint8_t fetchedData = read(addr_abs);
+    uint16_t temp = (uint16_t) fetchedData << 1;
+
+    SetFlag(C, (temp & 0xFF00) != 0);
+    write(addr_abs, temp & 0x00FF);
+
+    accumulator = accumulator | (temp & 0x00FF);
+
+    SetFlag(Z, accumulator == 0x00);
+    SetFlag(N, (accumulator & 0x80) != 0);
+
+    return 0; 
+}
+
+uint8_t Cpu6505::RLA() {
+    // 1. The ROL portion
+    uint8_t fetchedData = read(addr_abs);
+    
+    // Shift left by 1, and bring the OLD Carry flag into Bit 0
+    uint16_t temp = ((uint16_t)fetchedData << 1) | GetFlag(C);
+
+    // Set the NEW Carry flag based on what dropped out of Bit 7
+    SetFlag(C, (temp & 0xFF00) != 0);
+    
+    uint8_t rotatedData = temp & 0x00FF;
+    write(addr_abs, rotatedData);
+    
+    // 2. The AND portion
+    accumulator = accumulator & rotatedData;
+    
+    // Set standard Z and N flags based on the Accumulator's new value
+    SetFlag(Z, accumulator == 0x00);
+    SetFlag(N, (accumulator & 0x80) != 0);
+    
+    return 0; 
+}
+
+uint8_t Cpu6505::SRE() {
+    uint8_t fetchedData = read(addr_abs);
+
+    SetFlag(C, (fetchedData & 0x01) != 0);
+
+    uint8_t shiftedData = fetchedData >> 1;
+    write(addr_abs, shiftedData);
+
+    accumulator = accumulator ^ shiftedData;
+
+    SetFlag(Z, accumulator == 0x00);
+    SetFlag(N, (accumulator & 0x80) != 0);
+
+    return 0;
+}
+
+uint8_t Cpu6505::ALR() {
+    uint8_t fetchedData = read(addr_abs);
+    uint8_t temp = accumulator & fetchedData;
+    
+    SetFlag(C, (temp & 0x01) != 0);
+
+    accumulator = temp >> 1;
+
+    SetFlag(Z, accumulator == 0x00);
+    SetFlag(N, (accumulator & 0x80) != 0);
+
+    return 0;
+}
+
+uint8_t Cpu6505::ANC() {
+    uint8_t fetchedData = read(addr_abs);
+    accumulator = accumulator & fetchedData;
+
+    SetFlag(Z, accumulator == 0x00);
+    SetFlag(N, (accumulator & 0x80) != 0);
+
+    SetFlag(C, (accumulator & 0x80) != 0);
+
+    return 1;
+}
+
+uint8_t Cpu6505::XXX() {
     return 0;
 }

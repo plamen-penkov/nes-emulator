@@ -228,6 +228,22 @@ Cpu6505::Cpu6505() {
         {"LAX", &Cpu6505::LAX, &Cpu6505::ABY, 4},
 
         // 0xC0 - 0xCF
+        {"CPY", &Cpu6505::CPY, &Cpu6505::IMM, 2},
+        {"CMP", &Cpu6505::CMP, &Cpu6505::ZPX, 6},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMM, 2},
+        {"DCP", &Cpu6505::DCP, &Cpu6505::ZPX, 8},
+        {"CPY", &Cpu6505::CPY, &Cpu6505::ZP0, 3},
+        {"CMP", &Cpu6505::CMP, &Cpu6505::ZP0, 3},
+        {"DEC", &Cpu6505::DEC, &Cpu6505::ZP0, 5},
+        {"DCP", &Cpu6505::DCP, &Cpu6505::ZP0, 5},
+        {"INY", &Cpu6505::INY, &Cpu6505::IMP, 2},
+        {"CMP", &Cpu6505::CMP, &Cpu6505::IMM, 2},
+        {"DEX", &Cpu6505::DEX, &Cpu6505::IMP, 2},
+        {"AXS", &Cpu6505::AXS, &Cpu6505::IMM, 2},
+        {"CPY", &Cpu6505::CPY, &Cpu6505::ABS, 4},
+        {"CMP", &Cpu6505::CMP, &Cpu6505::ABS, 4},
+        {"DEC", &Cpu6505::DEC, &Cpu6505::ABS, 6},
+        {"DCP", &Cpu6505::DCP, &Cpu6505::ABS, 6},
 
         // 0xD0 - 0xDF
 
@@ -1340,6 +1356,49 @@ uint8_t Cpu6505::LAX() {
     // Return 1 because LAX is a Read instruction that can incur 
     // a +1 cycle page-crossing penalty depending on the addressing mode.
     return 1; 
+}
+
+uint8_t Cpu6505::DCP() {
+    // 1. The DEC portion
+    uint8_t fetchedData = read(addr_abs);
+    uint8_t decrementedData = fetchedData - 1;
+    
+    // Write back to memory
+    write(addr_abs, decrementedData);
+    
+    // 2. The CMP portion
+    // Compare involves subtracting the new memory value from the Accumulator
+    uint16_t temp = (uint16_t)accumulator - (uint16_t)decrementedData;
+    
+    // Set standard CMP flags
+    SetFlag(C, accumulator >= decrementedData);
+    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(N, (temp & 0x0080) != 0);
+    
+    // DCP is a Read-Modify-Write instruction, so page boundary penalties do not apply
+    return 0; 
+}
+
+uint8_t Cpu6505::AXS() {
+    // 1. Fetch the immediate operand
+    uint8_t fetchedData = read(addr_abs);
+    
+    // 2. Perform the bitwise AND between Accumulator and X
+    uint8_t andResult = accumulator & x;
+    
+    // 3. Subtract the fetched data from that result
+    uint16_t temp = (uint16_t)andResult - (uint16_t)fetchedData;
+    
+    // 4. Store the final result in the X register
+    x = temp & 0x00FF;
+    
+    // 5. Set flags
+    // Carry is set if the starting value was greater than or equal to the subtracted value
+    SetFlag(C, andResult >= fetchedData);
+    SetFlag(Z, x == 0x00);
+    SetFlag(N, (x & 0x80) != 0);
+    
+    return 0; // Immediate addressing never incurs variable page-crossing penalties
 }
 
 uint8_t Cpu6505::XXX() {

@@ -144,5 +144,15 @@ private:
     uint8_t SRE(); // Shift Right and XOR
     uint8_t ALR(); // AND then Shift Right
     uint8_t ANC(); // AND with Carry
+    uint8_t RRA(); // Rotate Right and Add with Carry
+    uint8_t ARR(); // Bitwise AND with Rotate Right
+    uint8_t SAX(); // Bitwise AND between the Accumulator and the X
+    uint8_t XAA(); // Bitwise AND between the X register, the Accumulator
+    uint8_t AHX(); // Bitwise AND between the Accumulator, the X register, and the High Byte of the target memory address plus one
+    uint8_t TAS();
+    uint8_t SHX();
+    uint8_t SHY();
+    uint8_t LAX();
+    uint8_t LAS();
     uint8_t XXX(); // Illegal
 };

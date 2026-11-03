@@ -4,7 +4,9 @@
 
 Cpu6505::Cpu6505() {
     // Fill the table with 256 blank instructions first to prevent crashes
-    lookup = std::vector<Instruction>(256, {"XXX", &Cpu6505::NOP, &Cpu6505::IMP, 2});
+    // lookup = std::vector<Instruction>(256, {"XXX", &Cpu6505::NOP, &Cpu6505::IMP, 2});
+
+    lookup[0xA9] = {"LDA", &Cpu6505::LDA, &Cpu6505::IMM, 2};
 
     // Document with the lookup table
     // https://www.reddit.com/r/beneater/comments/ujtza8/hi_today_i_finished_writing_this_document_which/#lightbox
@@ -93,21 +95,137 @@ Cpu6505::Cpu6505() {
         {"PHA", &Cpu6505::PHA, &Cpu6505::IMP, 3},
         {"EOR", &Cpu6505::EOR, &Cpu6505::IMM, 2},
         {"LSR", &Cpu6505::LSR, &Cpu6505::IMP, 2},
-        {"ALR", &Cpu6505::ALR, &Cpu6505::IMM, 2}
+        {"ALR", &Cpu6505::ALR, &Cpu6505::IMM, 2},
+        {"JMP", &Cpu6505::JMP, &Cpu6505::ABS, 3},
+        {"EOR", &Cpu6505::EOR, &Cpu6505::ABS, 4},
+        {"LSR", &Cpu6505::LSR, &Cpu6505::ABS, 6},
+        {"SRE", &Cpu6505::SRE, &Cpu6505::ABS, 6},
 
         // 0x50 - 0x5F
+        {"BVC", &Cpu6505::BVC, &Cpu6505::REL, 2},
+        {"EOR", &Cpu6505::EOR, &Cpu6505::ZPY, 5},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMM, 2},
+        {"SRE", &Cpu6505::SRE, &Cpu6505::ZPY, 8},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ZPX, 4},
+        {"EOR", &Cpu6505::EOR, &Cpu6505::ZPX, 4},
+        {"LSR", &Cpu6505::LSR, &Cpu6505::ZPX, 6},
+        {"SRE", &Cpu6505::SRE, &Cpu6505::ZPX, 6},
+        {"CLI", &Cpu6505::CLI, &Cpu6505::IMP, 2},
+        {"EOR", &Cpu6505::EOR, &Cpu6505::ABY, 4},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMP, 2},
+        {"SRE", &Cpu6505::SRE, &Cpu6505::ABY, 7},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ABX, 4},
+        {"EOR", &Cpu6505::EOR, &Cpu6505::ABX, 4},
+        {"LSR", &Cpu6505::LSR, &Cpu6505::ABX, 7},
+        {"SRE", &Cpu6505::SRE, &Cpu6505::ABX, 7},
 
         // 0x60 - 0x6F
+        {"RTS", &Cpu6505::RTS, &Cpu6505::IMP, 6},
+        {"ADC", &Cpu6505::ADC, &Cpu6505::ZPX, 6},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMM, 2},
+        {"RRA", &Cpu6505::RRA, &Cpu6505::ZPX, 8},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ZP0, 3},
+        {"ADC", &Cpu6505::ADC, &Cpu6505::ZP0, 3},
+        {"ROR", &Cpu6505::ROR, &Cpu6505::ZP0, 5},
+        {"RRA", &Cpu6505::RRA, &Cpu6505::ZP0, 5},
+        {"PLA", &Cpu6505::PLA, &Cpu6505::IMP, 4},
+        {"ADC", &Cpu6505::ADC, &Cpu6505::IMM, 2},
+        {"ROR", &Cpu6505::ROR, &Cpu6505::IMP, 2},
+        {"ARR", &Cpu6505::ARR, &Cpu6505::IMM, 2},
+        {"JMP", &Cpu6505::JMP, &Cpu6505::IND, 5},
+        {"ADC", &Cpu6505::ADC, &Cpu6505::ABS, 4},
+        {"ROR", &Cpu6505::ROR, &Cpu6505::ABS, 6},
+        {"RRA", &Cpu6505::RRA, &Cpu6505::ABS, 6},
 
         // 0x70 - 0x7F
+        {"BVS", &Cpu6505::BVS, &Cpu6505::REL, 2},
+        {"ADC", &Cpu6505::ADC, &Cpu6505::ZPY, 5},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMM, 2},
+        {"RRA", &Cpu6505::RRA, &Cpu6505::ZPY, 8},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ZPX, 4},
+        {"ADC", &Cpu6505::ADC, &Cpu6505::ZPX, 4},
+        {"ROR", &Cpu6505::ROR, &Cpu6505::ZPX, 6},
+        {"RRA", &Cpu6505::RRA, &Cpu6505::ZPX, 6},
+        {"SEI", &Cpu6505::SEI, &Cpu6505::IMP, 2},
+        {"ADC", &Cpu6505::ADC, &Cpu6505::ZPY, 4},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMP, 2},
+        {"RRA", &Cpu6505::RRA, &Cpu6505::ABY, 7},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ABX, 4},
+        {"ADC", &Cpu6505::ADC, &Cpu6505::ABX, 4},
+        {"ROR", &Cpu6505::ROR, &Cpu6505::ABX, 7},
+        {"RRA", &Cpu6505::RRA, &Cpu6505::ABX, 7},
 
         // 0x80 - 0x8F
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMM, 2},
+        {"STA", &Cpu6505::STA, &Cpu6505::ZPX, 6},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMM, 2},
+        {"SAX", &Cpu6505::SAX, &Cpu6505::ZPX, 6},
+        {"STY", &Cpu6505::STY, &Cpu6505::ZP0, 3},
+        {"STA", &Cpu6505::STA, &Cpu6505::ZP0, 3},
+        {"STX", &Cpu6505::STX, &Cpu6505::ZP0, 3},
+        {"SAX", &Cpu6505::SAX, &Cpu6505::ZP0, 3},
+        {"DEY", &Cpu6505::DEY, &Cpu6505::IMP, 2},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMM, 2},
+        {"TXA", &Cpu6505::TXA, &Cpu6505::IMP, 2},
+        {"XAA", &Cpu6505::XAA, &Cpu6505::IMM, 2},
+        {"STY", &Cpu6505::STY, &Cpu6505::ABS, 4},
+        {"STA", &Cpu6505::STA, &Cpu6505::ABS, 4},
+        {"STX", &Cpu6505::STX, &Cpu6505::ABS, 4},
+        {"SAX", &Cpu6505::SAX, &Cpu6505::ABS, 4},
 
         // 0x90 - 0x9F
+        {"BCC", &Cpu6505::BCC, &Cpu6505::REL, 2},
+        {"STA", &Cpu6505::STA, &Cpu6505::ZPY, 6},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMM, 2},
+        {"AHX", &Cpu6505::AHX, &Cpu6505::ZPY, 6},
+        {"STY", &Cpu6505::STY, &Cpu6505::ZPX, 4},
+        {"STA", &Cpu6505::STA, &Cpu6505::ZPX, 4},
+        {"STX", &Cpu6505::STX, &Cpu6505::ZPY, 4},
+        {"SAX", &Cpu6505::SAX, &Cpu6505::ZPY, 4},
+        {"TYA", &Cpu6505::TYA, &Cpu6505::IMP, 2},
+        {"STA", &Cpu6505::STA, &Cpu6505::ABY, 5},
+        {"TXS", &Cpu6505::TXS, &Cpu6505::IMP, 2},
+        {"TAS", &Cpu6505::TAS, &Cpu6505::ABY, 5},
+        {"SHY", &Cpu6505::SHY, &Cpu6505::ABX, 5},
+        {"STA", &Cpu6505::STA, &Cpu6505::ABX, 5},
+        {"SHX", &Cpu6505::SHX, &Cpu6505::ABY, 5},
+        {"SHA", &Cpu6505::AHX, &Cpu6505::ABY, 5},
 
         // 0xA0 - 0xAF
+        {"LDY", &Cpu6505::LDY, &Cpu6505::IMM, 2},
+        {"LDA", &Cpu6505::LDA, &Cpu6505::ZPX, 6},
+        {"LDX", &Cpu6505::LDX, &Cpu6505::IMM, 2},
+        {"LAX", &Cpu6505::LAX, &Cpu6505::ZPX, 6},
+        {"LDY", &Cpu6505::LDY, &Cpu6505::ZP0, 3},
+        {"LDA", &Cpu6505::LDA, &Cpu6505::ZP0, 3},
+        {"LDX", &Cpu6505::LDX, &Cpu6505::ZP0, 3},
+        {"LAX", &Cpu6505::LAX, &Cpu6505::ZP0, 3},
+        {"TAY", &Cpu6505::TAY, &Cpu6505::IMP, 2},
+        {"LDA", &Cpu6505::LDA, &Cpu6505::IMM, 2},
+        {"TAX", &Cpu6505::TAX, &Cpu6505::IMP, 2},
+        {"LAX", &Cpu6505::LAX, &Cpu6505::IMM, 2},
+        {"LDY", &Cpu6505::LDY, &Cpu6505::ABS, 4},
+        {"LDA", &Cpu6505::LDA, &Cpu6505::ABS, 4},
+        {"LDX", &Cpu6505::LDX, &Cpu6505::ABS, 4},
+        {"LAX", &Cpu6505::LAX, &Cpu6505::ABS, 4},
 
         // 0xB0 - 0xBF
+        {"BCS", &Cpu6505::BCS, &Cpu6505::REL, 2},
+        {"LDA", &Cpu6505::LDA, &Cpu6505::ZPY, 5},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMM, 2},
+        {"LAX", &Cpu6505::LAX, &Cpu6505::ZPY, 5},
+        {"LDY", &Cpu6505::LDY, &Cpu6505::ZPX, 4},
+        {"LDA", &Cpu6505::LDA, &Cpu6505::ZPX, 4},
+        {"LDX", &Cpu6505::LDX, &Cpu6505::ZPY, 4},
+        {"LAX", &Cpu6505::LAX, &Cpu6505::ZPY, 4},
+        {"CLV", &Cpu6505::CLV, &Cpu6505::IMP, 2},
+        {"LDA", &Cpu6505::LDA, &Cpu6505::ABY, 4},
+        {"TSX", &Cpu6505::TSX, &Cpu6505::IMP, 2},
+        {"LAS", &Cpu6505::LAS, &Cpu6505::ABY, 4},
+        {"LDY", &Cpu6505::LDY, &Cpu6505::ABX, 4},
+        {"LDA", &Cpu6505::LDA, &Cpu6505::ABY, 4},
+        {"LDX", &Cpu6505::LDX, &Cpu6505::ABY, 4},
+        {"LAX", &Cpu6505::LAX, &Cpu6505::ABY, 4},
 
         // 0xC0 - 0xCF
 
@@ -1075,6 +1193,153 @@ uint8_t Cpu6505::ANC() {
     SetFlag(C, (accumulator & 0x80) != 0);
 
     return 1;
+}
+
+uint8_t Cpu6505::RRA() {
+    uint8_t fetchedData = read(addr_abs);
+
+    uint8_t rotatedData = (fetchedData >> 1) | (GetFlag(C) << 7);
+
+    SetFlag(C, (fetchedData &  0x01) != 0);
+
+    write(addr_abs, rotatedData);
+
+    uint16_t temp = (uint16_t)accumulator + (uint16_t)rotatedData + (uint16_t)GetFlag(C);
+
+    SetFlag(C, temp > 255);
+    SetFlag(Z, (temp & 0x00FF) == 0);
+    SetFlag(V, (~((uint16_t)accumulator ^ (uint16_t)rotatedData) & ((uint16_t)accumulator ^ (uint16_t)temp)) & 0x0080);
+    SetFlag(N, temp & 0x80);
+
+    accumulator = temp & 0x00FF;
+
+    return 0;
+}
+
+uint8_t Cpu6505:: ARR() {
+    uint8_t fetchedData = read(addr_abs);
+    
+    // The AND portion
+    uint8_t temp = accumulator & fetchedData;
+    
+    // The ROR portion
+    // Shift right and bring the OLD Carry flag into Bit 7
+    uint8_t result = (temp >> 1) | (GetFlag(C) << 7);
+    
+    accumulator = result;
+    
+    // Standard Z and N flags
+    SetFlag(Z, accumulator == 0x00);
+    SetFlag(N, (accumulator & 0x80) != 0);
+    
+    // The ARR flag quirks
+    // Carry flag is set to Bit 6 of the result
+    SetFlag(C, (accumulator & 0x40) != 0);
+    
+    // Overflow flag is set to (Bit 6 XOR Bit 5)
+    uint8_t bit6 = (accumulator >> 6) & 0x01;
+    uint8_t bit5 = (accumulator >> 5) & 0x01;
+    SetFlag(V, bit6 ^ bit5);
+    
+    return 0;
+}
+
+uint8_t Cpu6505::SAX() {
+    uint8_t data = accumulator & x;
+    write(addr_abs, data);
+
+    return 0;
+}
+
+uint8_t Cpu6505::XAA() {
+    // 1. Fetch the immediate operand
+    uint8_t fetchedData = read(addr_abs);
+    
+    // 2. The accepted deterministic approximation of this unstable opcode
+    accumulator = x & accumulator & fetchedData;
+    
+    // 3. Set standard Z and N flags
+    SetFlag(Z, accumulator == 0x00);
+    SetFlag(N, (accumulator & 0x80) != 0);
+    
+    return 0;
+}
+
+uint8_t Cpu6505::AHX() {
+    // Extract the High Byte of the target address and add 1
+    uint8_t highByte = (addr_abs >> 8) + 1;
+    
+    // Bitwise AND the Accumulator, X register, and the modified High Byte
+    uint8_t data = accumulator & x & highByte;
+    
+    // Write the resulting data to memory
+    write(addr_abs, data);
+    
+    // Like other Store instructions, the cycle count is fixed
+    return 0;
+}
+
+uint8_t Cpu6505::TAS() {
+    // 1. Bitwise AND the Accumulator and X register
+    uint8_t temp = accumulator & x;
+    
+    // 2. Transfer that result directly into the Stack Pointer
+    stackPointer = temp;
+    
+    // 3. Extract the High Byte of the target address and add 1
+    uint8_t highByte = (addr_abs >> 8) + 1;
+    
+    // 4. AND the first result with the modified High Byte
+    uint8_t data = temp & highByte;
+    
+    // 5. Write the final resulting data to memory
+    write(addr_abs, data);
+    
+    // Store instruction, so the cycle count is fixed
+    return 0; 
+}
+
+uint8_t Cpu6505::SHX() {
+    // Extract the High Byte of the target address and add 1
+    uint8_t highByte = (addr_abs >> 8) + 1;
+    
+    // Bitwise AND the X register and the modified High Byte
+    uint8_t data = x & highByte;
+    
+    // Write the resulting data to memory
+    write(addr_abs, data);
+    
+    return 0; 
+}
+
+uint8_t Cpu6505::SHY() {
+    // Extract the High Byte of the target address and add 1
+    uint8_t highByte = (addr_abs >> 8) + 1;
+    
+    // Bitwise AND the Y register and the modified High Byte
+    uint8_t data = y & highByte;
+    
+    // Write the resulting data to memory
+    write(addr_abs, data);
+    
+    return 0; 
+}
+
+uint8_t Cpu6505::LAX() {
+    // 1. Fetch the data from memory
+    uint8_t fetchedData = read(addr_abs);
+    
+    // 2. Load the value into both the Accumulator and the X register
+    accumulator = fetchedData;
+    x = fetchedData;
+    
+    // 3. Set standard Z and N flags based on the newly loaded value
+    SetFlag(Z, accumulator == 0x00);
+    SetFlag(N, (accumulator & 0x80) != 0);
+    
+    // Return 1 because LAX is a Read instruction that can incur 
+    // a +1 cycle page-crossing penalty depending on the addressing mode.
+    return 1; 
 }
 
 uint8_t Cpu6505::XXX() {

@@ -6,7 +6,7 @@ Cpu6505::Cpu6505() {
     // Fill the table with 256 blank instructions first to prevent crashes
     // lookup = std::vector<Instruction>(256, {"XXX", &Cpu6505::NOP, &Cpu6505::IMP, 2});
 
-    lookup[0xA9] = {"LDA", &Cpu6505::LDA, &Cpu6505::IMM, 2};
+    // lookup[0xA9] = {"LDA", &Cpu6505::LDA, &Cpu6505::IMM, 2};
 
     // Document with the lookup table
     // https://www.reddit.com/r/beneater/comments/ujtza8/hi_today_i_finished_writing_this_document_which/#lightbox
@@ -246,11 +246,58 @@ Cpu6505::Cpu6505() {
         {"DCP", &Cpu6505::DCP, &Cpu6505::ABS, 6},
 
         // 0xD0 - 0xDF
+        {"BNE", &Cpu6505::BNE, &Cpu6505::REL, 2},
+        {"CMP", &Cpu6505::CMP, &Cpu6505::ZPY, 5},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMM, 2},
+        {"DCP", &Cpu6505::DCP, &Cpu6505::ZPY, 8},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ZPX, 4},
+        {"CMP", &Cpu6505::CMP, &Cpu6505::ZPX, 4},
+        {"DEC", &Cpu6505::DEC, &Cpu6505::ZPX, 6},
+        {"DCP", &Cpu6505::DCP, &Cpu6505::ZPX, 6},
+        {"CLD", &Cpu6505::CLD, &Cpu6505::IMP, 2},
+        {"CMP", &Cpu6505::CMP, &Cpu6505::ABY, 4},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMP, 2},
+        {"DCP", &Cpu6505::DCP, &Cpu6505::ABY, 7},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ABX, 4},
+        {"CMP", &Cpu6505::CMP, &Cpu6505::ABX, 4},
+        {"DEC", &Cpu6505::DEC, &Cpu6505::ABX, 7},
+        {"DCP", &Cpu6505::DCP, &Cpu6505::ABX, 7},
 
         // 0xE0 - 0xEF
+        {"CPX", &Cpu6505::CPX, &Cpu6505::IMM, 2},
+        {"SBC", &Cpu6505::SBC, &Cpu6505::ZPX, 6},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMM, 2},
+        {"ISC", &Cpu6505::ISC, &Cpu6505::ZPX, 8},
+        {"CPX", &Cpu6505::CPX, &Cpu6505::ZP0, 3},
+        {"SBC", &Cpu6505::SBC, &Cpu6505::ZP0, 3},
+        {"INC", &Cpu6505::INC, &Cpu6505::ZP0, 5},
+        {"ISC", &Cpu6505::ISC, &Cpu6505::ZP0, 5},
+        {"INX", &Cpu6505::INX, &Cpu6505::IMP, 2},
+        {"SBC", &Cpu6505::SBC, &Cpu6505::IMM, 2},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMP, 2},
+        {"SBC", &Cpu6505::SBC, &Cpu6505::IMM, 2},
+        {"CPX", &Cpu6505::CPX, &Cpu6505::ABS, 4},
+        {"SBC", &Cpu6505::SBC, &Cpu6505::ABS, 4},
+        {"INC", &Cpu6505::INC, &Cpu6505::ABS, 6},
+        {"ISC", &Cpu6505::ISC, &Cpu6505::ABS, 6},
 
         // 0xF0 - 0xFF
-
+        {"BEQ", &Cpu6505::BEQ, &Cpu6505::REL, 2},
+        {"SBC", &Cpu6505::SBC, &Cpu6505::ZPY, 5},
+        {"XXX", &Cpu6505::XXX, &Cpu6505::IMM, 2},
+        {"ISC", &Cpu6505::ISC, &Cpu6505::ZPY, 8},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ZPX, 4},
+        {"SBC", &Cpu6505::SBC, &Cpu6505::ZPX, 4},
+        {"INC", &Cpu6505::INC, &Cpu6505::ZPX, 6},
+        {"ISC", &Cpu6505::ISC, &Cpu6505::ZPX, 6},
+        {"SED", &Cpu6505::SED, &Cpu6505::IMP, 2},
+        {"SBC", &Cpu6505::SBC, &Cpu6505::ABY, 4},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::IMP, 2},
+        {"ISC", &Cpu6505::ISC, &Cpu6505::ABY, 7},
+        {"NOP", &Cpu6505::NOP, &Cpu6505::ABX, 4},
+        {"SBC", &Cpu6505::SBC, &Cpu6505::ABX, 4},
+        {"INC", &Cpu6505::INC, &Cpu6505::ABX, 7},
+        {"ISC", &Cpu6505::ISC, &Cpu6505::ABX, 7}
     };
 }
 
@@ -1399,6 +1446,33 @@ uint8_t Cpu6505::AXS() {
     SetFlag(N, (x & 0x80) != 0);
     
     return 0; // Immediate addressing never incurs variable page-crossing penalties
+}
+
+uint8_t Cpu6505::ISC() {
+    // 1. The INC portion
+    uint8_t fetchedData = read(addr_abs);
+    uint8_t incrementedData = fetchedData + 1;
+    
+    // Write back to memory
+    write(addr_abs, incrementedData);
+    
+    // 2. The SBC portion
+    // In 6502 architecture, subtraction is addition with an inverted operand
+    uint16_t invertedData = ((uint16_t)incrementedData) ^ 0x00FF;
+    
+    // Perform standard ADC addition using the inverted data
+    uint16_t temp = (uint16_t)accumulator + invertedData + (uint16_t)GetFlag(C);
+    
+    SetFlag(C, temp > 255);
+    SetFlag(Z, (temp & 0x00FF) == 0);
+    // Overflow occurs if (Accumulator ^ Result) AND (InvertedData ^ Result) has the sign bit set
+    SetFlag(V, (temp ^ (uint16_t)accumulator) & (temp ^ invertedData) & 0x0080);
+    SetFlag(N, temp & 0x80);
+    
+    accumulator = temp & 0x00FF;
+    
+    // ISC is a Read-Modify-Write instruction, so page boundary penalties do not apply
+    return 0; 
 }
 
 uint8_t Cpu6505::XXX() {

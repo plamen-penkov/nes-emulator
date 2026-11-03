@@ -156,5 +156,6 @@ private:
     uint8_t LAS();
     uint8_t DCP();
     uint8_t AXS();
+    uint8_t ISC();
     uint8_t XXX(); // Illegal
 };

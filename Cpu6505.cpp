@@ -1475,6 +1475,27 @@ uint8_t Cpu6505::ISC() {
     return 0; 
 }
 
+uint8_t Cpu6505::LAS() {
+    // 1. Fetch the data from memory
+    uint8_t fetchedData = read(addr_abs);
+    
+    // 2. Perform the bitwise AND with the Stack Pointer
+    uint8_t result = fetchedData & stackPointer;
+    
+    // 3. Store the result in the Accumulator, X register, and Stack Pointer
+    accumulator = result;
+    x = result;
+    stackPointer = result;
+    
+    // 4. Set standard Z and N flags based on the new value
+    SetFlag(Z, result == 0x00);
+    SetFlag(N, (result & 0x80) != 0);
+    
+    // Return 1 because LAS is a Read instruction that can incur 
+    // a +1 cycle page-crossing penalty depending on the addressing mode.
+    return 1; 
+}
+
 uint8_t Cpu6505::XXX() {
     return 0;
 }

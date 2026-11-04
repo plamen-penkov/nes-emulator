@@ -41,6 +41,8 @@ public:
 
     void clock();
     void reset();
+    void LogState();
+    void LoadRom(const char* filePath);
     
 private:
     Bus* bus = nullptr;
@@ -52,6 +54,12 @@ private:
     uint8_t GetFlag(FLAGS6502 f);
     
     bool isAccumulatorMode = false; 
+
+    // ==============================================
+    // Hardware Interrupts
+    // ==============================================
+    void InterruptRequest();
+    void NonMaskableInterrupt();
 
     // ==============================================
     // Addressing Modes (These return an extra cycle penalty if applicable)

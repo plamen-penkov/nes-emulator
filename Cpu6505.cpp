@@ -1,6 +1,8 @@
 #include "Cpu6505.hpp"
 #include "Bus.hpp"
+#include <fstream>
 #include <vector>
+#include <iostream>
 
 Cpu6505::Cpu6505() {
     // Fill the table with 256 blank instructions first to prevent crashes
@@ -349,6 +351,41 @@ void Cpu6505::reset() {
     cycles = 8;
 }
 
+void Cpu6505::LogState() {
+    uint8_t opcode = read(programCounter);
+
+    // Output PC, Opcode, and current Register states BEFORE execution
+    printf("%04X  %02X        A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%d\n",
+           programCounter, 
+           opcode, 
+           accumulator, x, y, status, stackPointer, cycles);
+}
+
+void Cpu6505::LoadRom(const char* filePath) {
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file.is_open()) {
+        std::cout << "Error: Could not open " << filePath;
+        return;
+    }
+
+    // Skip the 16-byte iNES header
+    file.seekg(16, std::ios::beg);
+
+    // Read 16384 bytes of PRG-ROM data
+    uint8_t prgRom[16384];
+    file.read(reinterpret_cast<char*>(prgRom), 16384);
+    file.close();
+
+    // Map the data into the standard PRG-ROM memory space (0x8000 - 0xBFFF)
+    // and mirror it into the upper bank (0xC000 - 0xFFFF)
+    for (int i = 0; i < 16384; i++) {
+        // Assuming your 64KB memory array is named 'memory'
+        bus->ram[0x8000 + i] = prgRom[i];
+        bus->ram[0xC000 + i] = prgRom[i];
+    }
+
+}
+
 void Cpu6505::SetFlag(FLAGS6502 f, bool v) {
     if (v) {
         status |= f;
@@ -359,6 +396,58 @@ void Cpu6505::SetFlag(FLAGS6502 f, bool v) {
 
 uint8_t Cpu6505::GetFlag(FLAGS6502 f) {
     return ((status & f) > 0) ? 1 : 0;
+}
+
+// ==============================================
+// Hardware interrupts
+// ==============================================
+void Cpu6505::InterruptRequest() {
+    // 1. Check if I flag is 1. If yes, return immediately.
+    if (GetFlag(I) == 1) return;
+    
+    // 2. Push PC high and low bytes to (0x0100 + stackPointer)
+    write(0x0100 + stackPointer, (programCounter >> 8) & 0x00FF);
+    stackPointer--;
+
+    write(0x0100 + stackPointer, programCounter & 0x00FF);
+    stackPointer--;
+    
+    // 3. Push Status to stack
+    write(0x0100 + stackPointer, (status & ~0x10) | 0x20);
+    stackPointer--;
+    
+    // 4. Set I flag to 1
+    SetFlag(I, 1);
+    
+    // 5. Load new PC from 0xFFFE (low) and 0xFFFF (high), add 7 cycles
+    uint8_t lo = read(0xFFFE);
+    uint8_t hi = read(0xFFFF);
+    programCounter = ((uint16_t)hi << 8) | (uint16_t)lo;
+
+    cycles += 7;
+}
+
+void Cpu6505::NonMaskableInterrupt() {
+    // 1. Push PC high and low bytes (No I-flag check needed!)
+    write(0x0100 + stackPointer, (programCounter >> 8) & 0x00FF);
+    stackPointer--;
+
+    write(0x0100 + stackPointer, programCounter & 0x00FF);
+    stackPointer--;
+    
+    // 2. Push Status to stack
+    write(0x0100 + stackPointer, (status & ~0x10) | 0x20);
+    stackPointer--;
+    
+    // 3. Set I flag to 1
+    SetFlag(I, 1);
+    
+    // 4. Load new PC from 0xFFFA (low) and 0xFFFB (high), add 7 cycles
+    uint8_t lo = read(0xFFFA);
+    uint8_t hi = read(0xFFFB);
+    programCounter = ((uint16_t)hi << 8) | (uint16_t)lo;
+
+    cycles += 7;
 }
 
 // ==============================================
@@ -1472,7 +1561,7 @@ uint8_t Cpu6505::ISC() {
     accumulator = temp & 0x00FF;
     
     // ISC is a Read-Modify-Write instruction, so page boundary penalties do not apply
-    return 0; 
+    return 0;
 }
 
 uint8_t Cpu6505::LAS() {
